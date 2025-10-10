@@ -45,7 +45,6 @@ try {
         $uid = $pdo->lastInsertId();
     }
 
-    // === Normal checkout flow ===
     // Generate a unique invoice_no and insert the sale with prepared params.
     $maxAttempts = 5;
     $saleId = null;
@@ -65,7 +64,6 @@ try {
                 VALUES (:invoice_no,:user_id,:subtotal,:total_amount,:paid_amount,:change_amount,:created_at)";
 
         try {
-            // Log SQL + params for diagnostics
             @file_put_contents('/tmp/cart_debug.log', json_encode(['time' => date('c'), 'sql' => $sql, 'params' => $saleData]) . PHP_EOL, FILE_APPEND);
             $stmt = $pdo->prepare($sql);
             $stmt->execute($saleData);
@@ -86,7 +84,6 @@ try {
 
     if (!$saleId) throw new Exception('Failed to create sale record');
 
-    // Insert sale items and update stock
     $insItem = $pdo->prepare('INSERT INTO sale_items (sale_id, product_id, qty, price) VALUES (:sale_id, :product_id, :qty, :price)');
     $updStock = $pdo->prepare('UPDATE products SET stock = stock - :qty WHERE id = :id');
 

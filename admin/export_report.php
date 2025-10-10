@@ -14,7 +14,7 @@ try {
         fclose($out);
         exit;
     }
-    // other formats could be added
+
     header('Content-Type: application/json');
     echo json_encode($rows);
 } catch (Exception $e) {
