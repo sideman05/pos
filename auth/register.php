@@ -16,9 +16,12 @@ header('Location: login.php'); exit;
 <!doctype html>
 <html><head><meta charset="utf-8"><title>Register</title></head><body>
 <form method="post">
+    <h2>Register</h2>
 <input name="username" required placeholder="Username"><br>
 <input name="full_name" placeholder="Full name"><br>
 <input name="password" type="password" required placeholder="Password"><br>
 <button type="submit">Register</button>
+<!-- <p> Arleady have an account?  <a href="login.php">login</a></p> -->
+
 </form>
 </body></html>

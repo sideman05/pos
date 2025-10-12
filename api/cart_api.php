@@ -2,6 +2,18 @@
 require_once __DIR__ . '/../inc/db.php';
 header('Content-Type: application/json');
 
+// Request start log for debugging (use error_log)
+error_log('CART_DEBUG REQUEST_START: ' . json_encode(['time' => date('c'), 'event' => 'request_start', 'uri' => $_SERVER['REQUEST_URI'], 'method' => $_SERVER['REQUEST_METHOD'], 'payload' => file_get_contents('php://input')]));
+// Log the CREATE TABLE seen by this request (helps detect different DB/schema)
+try {
+    $ct = $pdo->query('SHOW CREATE TABLE sales')->fetch(PDO::FETCH_ASSOC);
+    if (!empty($ct['Create Table'])) {
+        error_log('CART_DEBUG CREATE_TABLE: ' . $ct['Create Table']);
+    }
+} catch (Exception $e) {
+    error_log('CART_DEBUG SHOW_CREATE_ERROR: ' . $e->getMessage());
+}
+
 // Enable errors for debugging
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -45,37 +57,64 @@ try {
         $uid = $pdo->lastInsertId();
     }
 
-    // Generate a unique invoice_no and insert the sale with prepared params.
+    $colsInfo = $pdo->query('SHOW COLUMNS FROM sales')->fetchAll(PDO::FETCH_ASSOC);
+    $salesCols = array_column($colsInfo, 'Field');
+
+    $preferred = ['invoice_no', 'user_id', 'subtotal', 'total_amount', 'paid_amount', 'change_amount', 'created_at'];
     $maxAttempts = 5;
     $saleId = null;
     for ($attempt = 0; $attempt < $maxAttempts; $attempt++) {
         $invoice = 'INV' . time() . rand(100, 999);
-        $saleData = [
-            ':invoice_no'   => $invoice,
-            ':user_id'      => intval($uid),
-            ':subtotal'     => $total,
-            ':total_amount' => $total,
-            ':paid_amount'  => $total,
-            ':change_amount'=> 0.0,
-            ':created_at'   => date('Y-m-d H:i:s')
-        ];
 
-        $sql = "INSERT INTO sales (invoice_no,user_id,subtotal,total_amount,paid_amount,change_amount,created_at)
-                VALUES (:invoice_no,:user_id,:subtotal,:total_amount,:paid_amount,:change_amount,:created_at)";
+        // Build columns and params according to what exists in the table
+        $cols = [];
+        $placeholders = [];
+        $saleData = [];
+        foreach ($preferred as $col) {
+            if (!in_array($col, $salesCols)) continue;
+            $cols[] = $col;
+            $placeholders[] = ':' . $col;
+            switch ($col) {
+                case 'invoice_no':
+                    $saleData[':' . $col] = $invoice;
+                    break;
+                case 'user_id':
+                    $saleData[':' . $col] = intval($uid);
+                    break;
+                case 'subtotal':
+                    $saleData[':' . $col] = $total;
+                    break;
+                case 'total_amount':
+                    $saleData[':' . $col] = $total;
+                    break;
+                case 'paid_amount':
+                    $saleData[':' . $col] = $total;
+                    break;
+                case 'change_amount':
+                    $saleData[':' . $col] = 0.0;
+                    break;
+                case 'created_at':
+                    $saleData[':' . $col] = date('Y-m-d H:i:s');
+                    break;
+                default:
+                    $saleData[':' . $col] = null;
+                    break;
+            }
+        }
+
+        $sql = 'INSERT INTO sales (' . implode(',', $cols) . ') VALUES (' . implode(',', $placeholders) . ')';
 
         try {
-            @file_put_contents('/tmp/cart_debug.log', json_encode(['time' => date('c'), 'sql' => $sql, 'params' => $saleData]) . PHP_EOL, FILE_APPEND);
+            error_log('CART_DEBUG SQL: ' . json_encode(['time' => date('c'), 'attempt' => $attempt, 'sql' => $sql, 'params' => $saleData]));
             $stmt = $pdo->prepare($sql);
             $stmt->execute($saleData);
             $saleId = $pdo->lastInsertId();
             break;
         } catch (PDOException $e) {
-            // Log exception
-            @file_put_contents('/tmp/cart_debug.log', json_encode(['time' => date('c'), 'error' => $e->getMessage(), 'attempt' => $attempt]) . PHP_EOL, FILE_APPEND);
-            // If duplicate invoice, try again; otherwise fail
+            $err = ['time' => date('c'), 'attempt' => $attempt, 'message' => $e->getMessage(), 'errorInfo' => $e->errorInfo ?? null, 'sql' => $sql, 'params' => $saleData];
+            error_log('CART_DEBUG ERROR: ' . json_encode($err));
             if (strpos($e->getMessage(), 'Duplicate entry') !== false && $attempt < $maxAttempts - 1) {
-                // try another invoice
-                usleep(100000); // 100ms
+                usleep(100000);
                 continue;
             }
             throw $e;
@@ -84,18 +123,40 @@ try {
 
     if (!$saleId) throw new Exception('Failed to create sale record');
 
-    $insItem = $pdo->prepare('INSERT INTO sale_items (sale_id, product_id, qty, price) VALUES (:sale_id, :product_id, :qty, :price)');
+    // Prepare sale_items insert dynamically to include subtotal if column exists
+    $siColsInfo = $pdo->query('SHOW COLUMNS FROM sale_items')->fetchAll(PDO::FETCH_ASSOC);
+    $siCols = array_column($siColsInfo, 'Field');
+    if (in_array('subtotal', $siCols)) {
+        $insItem = $pdo->prepare('INSERT INTO sale_items (sale_id, product_id, qty, price, subtotal) VALUES (:sale_id, :product_id, :qty, :price, :subtotal)');
+        $insIncludesSubtotal = true;
+    } else {
+        $insItem = $pdo->prepare('INSERT INTO sale_items (sale_id, product_id, qty, price) VALUES (:sale_id, :product_id, :qty, :price)');
+        $insIncludesSubtotal = false;
+    }
     $updStock = $pdo->prepare('UPDATE products SET stock = stock - :qty WHERE id = :id');
 
     foreach ($items as $it) {
         $stmtP->execute([':id' => $it['product_id']]);
         $prod = $stmtP->fetch(PDO::FETCH_ASSOC);
-        $insItem->execute([
-            ':sale_id' => $saleId,
-            ':product_id' => $it['product_id'],
-            ':qty' => intval($it['qty']),
-            ':price' => floatval($prod['price'])
-        ]);
+        $itemQty = intval($it['qty']);
+        $itemPrice = floatval($prod['price']);
+        $itemSubtotal = $itemPrice * $itemQty;
+        if ($insIncludesSubtotal) {
+            $insItem->execute([
+                ':sale_id' => $saleId,
+                ':product_id' => $it['product_id'],
+                ':qty' => $itemQty,
+                ':price' => $itemPrice,
+                ':subtotal' => $itemSubtotal
+            ]);
+        } else {
+            $insItem->execute([
+                ':sale_id' => $saleId,
+                ':product_id' => $it['product_id'],
+                ':qty' => $itemQty,
+                ':price' => $itemPrice
+            ]);
+        }
         $updStock->execute([
             ':qty' => intval($it['qty']),
             ':id' => $it['product_id']
@@ -104,9 +165,21 @@ try {
 
     $pdo->commit();
     echo json_encode(['ok' => true, 'sale_id' => $saleId, 'total' => $total]);
-
 } catch (Exception $e) {
     if ($pdo->inTransaction()) $pdo->rollBack();
+    // Detailed debug to help find why subtotal is missing
+    $err = [
+        'time' => date('c'),
+        'message' => $e->getMessage(),
+        'class' => get_class($e),
+        'trace' => $e->getTraceAsString(),
+        'payload' => @json_decode(file_get_contents('php://input'), true)
+    ];
+    if ($e instanceof PDOException) {
+        $err['errorInfo'] = $e->errorInfo ?? null;
+    }
+    error_log('CART_DEBUG OUTER_ERROR: ' . json_encode($err));
+
     http_response_code(500);
     echo json_encode(['error' => $e->getMessage()]);
 }

@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../inc/db.php';
+require_once __DIR__ . '/../inc/timeout.php';
 require_once __DIR__ . '/../inc/helpers.php';
 require_login();
 $products = $pdo->query('SELECT * FROM products ORDER BY created_at DESC')->fetchAll();

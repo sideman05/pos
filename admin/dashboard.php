@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../inc/db.php';
 require_once __DIR__ . '/../inc/helpers.php';
+require_once __DIR__ . '/../inc/timeout.php';
 require_login();
 $user = current_user();
 // fetch quick stats
@@ -29,9 +30,10 @@ $today_total =  $today_sales->fetchColumn() ?: 0;
             <div class="card">Products<br><strong><?= $total_products ?></strong></div>
             <div class="card">Sales<br><strong><?= $total_sales ?></strong></div>
             <div class="card">Today Revenue<br><strong><?= $today_total ?></strong></div>
+            
         </div>
         <nav>
-            <a href="products.php">Products</a> | <a href="inventory.php">Inventory</a> | <a href="reports.php">Reports</a> | <a href="/pos/pos.php">POS</a>
+            <a href="products.php">Products</a> | <a href="inventory.php">Inventory</a> | <a href="reports.php">Reports</a> | <a href="/pos/pos.php">POS</a> | <a href="users.php">Manage users</a>  | <a href="">Notifications</a> | <a href="/pos/auth/out.php">Logout</a>
         </nav>
     </main>
 </body>
