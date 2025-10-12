@@ -1,7 +1,7 @@
 <?php
 
 if (!defined('SESSION_TIMEOUT')) {
-    define('SESSION_TIMEOUT', 1 * 30); 
+    define('SESSION_TIMEOUT', 60 * 30); 
 }
 
 if (session_status() === PHP_SESSION_NONE) {

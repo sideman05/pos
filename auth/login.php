@@ -13,6 +13,9 @@ $_SESSION['user'] = $user;
            if (isset($user['role']) && $user['role'] === 'cashier') {
                header('Location: /pos/admin/cashier_dashboard.php'); exit;
            }
+           else if (isset($user['role']) && $user['role'] === 'manager') {
+               header('Location: /pos/admin/manager_dashboard.php'); exit;
+           }
            header('Location: /pos/admin/dashboard.php'); exit;
 } else {
 $error = 'Invalid credentials';
