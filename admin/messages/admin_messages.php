@@ -38,6 +38,26 @@ $notes = $stmt->fetchAll(PDO::FETCH_ASSOC);
       background: #f8fafc;
       min-height: 2vh;
     }
+    #overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.4); 
+  backdrop-filter: blur(2px); 
+  z-index: 5;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+
+#overlay.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
     </style>
 </head>
 <body>
@@ -86,17 +106,27 @@ $notes = $stmt->fetchAll(PDO::FETCH_ASSOC);
       <div class="no-notifications">No new notifications 🎉</div>
     <?php endif; ?>
   </section>
+  <div id="overlay"></div>
 </main> 
+     <script src="../assets/js/app.js"></script>
 
     <script>
-  const menuToggle = document.getElementById('menuToggle');
-  const sidebarNav = document.getElementById('sidebarNav');
+const menuToggle = document.getElementById('menuToggle');
+const sidebarNav = document.getElementById('sidebarNav');
+const overlay = document.getElementById('overlay');
 
-  menuToggle.addEventListener('click', () => {
-    sidebarNav.classList.toggle('open');
-
-    menuToggle.textContent = sidebarNav.classList.contains('open') ? '✖' : '☰';
-  });
+menuToggle.addEventListener('click', () => {
+  sidebarNav.classList.toggle('open');
+  const isOpen = sidebarNav.classList.contains('open');
+  menuToggle.textContent = isOpen ? '✖' : '☰';
+  
+  overlay.classList.toggle('active', isOpen);
+});
+overlay.addEventListener('click', () => {
+  sidebarNav.classList.remove('open');
+  overlay.classList.remove('active');
+  menuToggle.textContent = '☰';
+});
 </script>
 </body>
 </html>

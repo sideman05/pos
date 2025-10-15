@@ -14,6 +14,28 @@ require_once __DIR__ . '/../inc/db.php';
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Admin Reports for POS System">
     <link rel="stylesheet" href="../assets/css/style.css">
+    <style>
+        #overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.4); 
+  backdrop-filter: blur(2px); 
+  z-index: 5;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+
+#overlay.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+    </style>
 </head>
 
 <body>
@@ -63,6 +85,8 @@ require_once __DIR__ . '/../inc/db.php';
     ?>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+     <script src="../assets/js/app.js"></script>
+
     <script>
         document.getElementById('export-csv').addEventListener('click', function() {
             window.location = 'export_report.php?format=csv';
@@ -113,16 +137,24 @@ require_once __DIR__ . '/../inc/db.php';
             doc.save('sales_report.pdf');
         });
 
-  const menuToggle = document.getElementById('menuToggle');
-  const sidebarNav = document.getElementById('sidebarNav');
+const menuToggle = document.getElementById('menuToggle');
+const sidebarNav = document.getElementById('sidebarNav');
+const overlay = document.getElementById('overlay');
 
-  menuToggle.addEventListener('click', () => {
-    sidebarNav.classList.toggle('open');
-
-    menuToggle.textContent = sidebarNav.classList.contains('open') ? '✖' : '☰';
-  });
+menuToggle.addEventListener('click', () => {
+  sidebarNav.classList.toggle('open');
+  const isOpen = sidebarNav.classList.contains('open');
+  menuToggle.textContent = isOpen ? '✖' : '☰';
+  
+  overlay.classList.toggle('active', isOpen);
+});
+overlay.addEventListener('click', () => {
+  sidebarNav.classList.remove('open');
+  overlay.classList.remove('active');
+  menuToggle.textContent = '☰';
+});
     </script>
-
+<div id="overlay"></div>
     </main>
 </body>
 
