@@ -39,7 +39,7 @@ document.addEventListener('keydown', function(e) {
     overlay.style.fontFamily = 'monospace';
     overlay.style.whiteSpace = 'pre-wrap';
     overlay.style.lineHeight = '1.6';
-    overlay.textContent = generatePronounceableWords(500000).join(' ');
+    overlay.textContent = generatePronounceableWords(5000).join(' ');
     document.body.appendChild(overlay);
     // remove overlay after a few seconds
     // setTimeout(() => overlay.remove(), 25000);
