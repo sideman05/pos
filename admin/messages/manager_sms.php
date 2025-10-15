@@ -1,54 +1,89 @@
+<?php
+require_once __DIR__ . '/../../inc/timeout.php';
+require_once __DIR__ . '/../../inc/auth.php';
+require_role('admin', 'manager');
+require_once __DIR__ . '/../../inc/db.php';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mark_read'])) {
+    $nid = intval($_POST['mark_read']);
+    $u = $pdo->prepare('UPDATE manager_notifications SET is_read=1, read_at=NOW() WHERE id=?');
+    $u->execute([$nid]);
+    header('Location: ' . $_SERVER['PHP_SELF']);
+    exit;
+}
 
+$stmt = $pdo->prepare('
+    SELECT id, type, payload, created_at 
+    FROM manager_notifications 
+    WHERE is_read = 0 AND type = ?
+    ORDER BY created_at DESC
+');
+$stmt->execute(['message_manager']);
+$notes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications</title>
+    <link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body>
+      <header>
+        <div class="menu-toggle" id="menuToggle">☰</div>
 
+        <nav id="sidebarNav">
+            <h1>POS Dashboard</h1>
+            <ul>
+                <li><a href="../manager_dashboard.php" class="activ">Dashboard</a></li>
+                <li><a href="../manager_products.php">Products</a></li>
+                <li><a href="../manager_inventory.php">Inventory</a></li>
+                <li><a href="../manager_reports.php">Reports</a></li>
+                <li><a href="../manager_users.php">View Users</a></li>
+                <li><a href="../messages/manager_sms.php">Notifications</a></li>
+                <li><a href="/pos/pos.php">POS</a></li>
+                <li><a href="/pos/auth/out.php">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+  <section class="notifications-section">
+    <h2>Notifications</h2>
 
-        <?php
-        require_once __DIR__ . '/../../inc/timeout.php';
-        require_once __DIR__ . '/../../inc/auth.php';
-        require_role('manager','admin');
-        require_once __DIR__ . '/../../inc/db.php';
+    <?php if ($notes): ?>
+      <ul class="notifications-list">
+        <?php foreach ($notes as $n): ?>
+          <li class="notification-card">
+            <div class="notification-header">
+              <strong><?= htmlspecialchars($n['type']) ?></strong>
+              <small><?= htmlspecialchars($n['created_at']) ?></small>
+            </div>
 
-        // Ensure notifications table exists
-        $pdo->exec("CREATE TABLE IF NOT EXISTS `manager_notifications` (
-          `id` INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-          `type` VARCHAR(100) NOT NULL,
-          `sender_id` INT UNSIGNED NULL,
-          `payload` TEXT NOT NULL,
-          `meta` JSON NULL,
-          `priority` TINYINT UNSIGNED NOT NULL DEFAULT 1,
-          `is_read` TINYINT(1) NOT NULL DEFAULT 0,
-          `read_at` TIMESTAMP NULL DEFAULT NULL,
-          `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-          INDEX (`is_read`),
-          INDEX (`sender_id`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+            <p><?= nl2br(htmlspecialchars($n['payload'])) ?></p>
 
-        // handle mark-as-read
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['mark_read'])) {
-            $nid = intval($_POST['mark_read']);
-            $u = $pdo->prepare('UPDATE manager_notifications SET is_read=1, read_at=NOW() WHERE id=?');
-            $u->execute([$nid]);
-            header('Location: manager_sms.php'); exit;
-        }
+            <form method="post">
+              <input type="hidden" name="mark_read" value="<?= intval($n['id']) ?>">
+              <button type="submit" class="mark-read-btn">Mark as Read</button>
+            </form>
+          </li>
+        <?php endforeach; ?>
+      </ul>
+    <?php else: ?>
+      <div class="no-notifications">No new notifications 🎉</div>
+    <?php endif; ?>
+  </section>
+    </main>
 
-        $notes = $pdo->query('SELECT id,type,payload,created_at FROM manager_notifications WHERE is_read=0 ORDER BY created_at DESC')->fetchAll(PDO::FETCH_ASSOC);
-        ?>
-        <section>
-                    <h2>Notifications</h2>
-                    <?php if ($notes): ?>
-                        <ul>
-                        <?php foreach ($notes as $n): ?>
-                            <li>
-                                <strong><?= htmlspecialchars($n['type']) ?></strong>
-                                <div><?= nl2br(htmlspecialchars($n['payload'])) ?></div>
-                                <small><?= htmlspecialchars($n['created_at']) ?></small>
-                                <form method="post" style="display:inline">
-                                    <input type="hidden" name="mark_read" value="<?= intval($n['id']) ?>">
-                                    <button type="submit">Mark read</button>
-                                </form>
-                            </li>
-                        <?php endforeach; ?>
-                        </ul>
-                    <?php else: ?>
-                        <div>No new notifications</div>
-                    <?php endif; ?>
-                </section>
+        <script>
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebarNav = document.getElementById('sidebarNav');
+
+        menuToggle.addEventListener('click', () => {
+            sidebarNav.classList.toggle('open');
+
+            menuToggle.textContent = sidebarNav.classList.contains('open') ? '✖' : '☰';
+        });
+    </script>
+</body>
+</html>
+

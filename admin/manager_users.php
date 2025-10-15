@@ -22,31 +22,28 @@ require_once __DIR__ . '/../inc/db.php';
     <div class="menu-toggle" id="menuToggle">☰</div>
 
     <nav id="sidebarNav">
-                 <h1>Admin <br> POS Dashboard</h1>
-
-            <ul>
-                <li><a href="dashboard.php" >Dashboard</a></li>
-                <li><a href="products.php">Products</a></li>
-                <li><a href="inventory.php">Inventory</a></li>
-                <li><a href="reports.php">Reports</a></li>
-                <li><a href="users.php" class="activ">Manage users</a></li>
-                <li><a href="analys.php">Analyse</a></li>
-                <li><a href="../admin/messages/admin_messages.php">Notifications</a></li>
-                <li><a href="/pos/pos.php">POS</a></li>
-                <li><a href="/pos/auth/out.php">Logout</a></li>
-            </ul>
+  <h1>POS Dashboard</h1>
+      <ul>
+        <li><a href="manager_dashboard.php" class="activ">Dashboard</a></li>
+        <li><a href="manager_products.php">Products</a></li>
+        <li><a href="manager_inventory.php">Inventory</a></li>
+        <li><a href="manager_reports.php">Reports</a></li>
+        <li><a href="manager_users.php">View Users</a></li>
+        <li><a href="../admin/messages/manager_sms.php">Notifications</a></li>
+        <li><a href="/pos/pos.php">POS</a></li>
+        <li><a href="/pos/auth/out.php">Logout</a></li>
+      </ul>
     </nav>
   </header>
 
   <main class="users">
     <h1>Users</h1>
     <div style="margin-top:8px">
-      <a href="user_add.php">Add user</a></div>
     <?php
     try {
       $rows = $pdo->query('SELECT id,username,full_name,role,created_at FROM users')->fetchAll(PDO::FETCH_ASSOC);
       if ($rows) {
-        echo '<table border="1" cellpadding="6" cellspacing="0"><tr><th>ID</th><th>Username</th> <th> Full name</th> <th>Role</th><th>Created</th><th>Actions</th></tr>';
+        echo '<table border="1" cellpadding="6" cellspacing="0"><tr><th>ID</th><th>Username</th> <th> Full name</th> <th>Role</th><th>Created</th></tr>';
 foreach ($rows as $r) {
   $id = intval($r['id']);
   echo "<tr>
@@ -55,10 +52,6 @@ foreach ($rows as $r) {
           <td>" . htmlspecialchars($r['full_name']) . "</td>
           <td>" . htmlspecialchars($r['role']) . "</td>
           <td>" . htmlspecialchars($r['created_at']) . "</td>
-          <td>
-            <a href='user_edit.php?id={$id}'>Edit</a> | 
-            <button class='deleteBtn' data-id='{$id}'>Delete</button>
-          </td>
         </tr>";
 }
 

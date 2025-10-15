@@ -7,8 +7,8 @@ try {
     $products = [];
 
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $row['price'] = floatval($row['price']); // always numeric
-        $row['stock'] = intval($row['stock']);   // always numeric
+        $row['price'] = floatval($row['price']); 
+        $row['stock'] = intval($row['stock']);  
         $products[] = $row;
     }
 

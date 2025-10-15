@@ -32,15 +32,15 @@ try {
     <main>
         <section class="cards">
             <div class="card">Today's Orders<br><strong><?= intval($today['orders']) ?></strong></div>
-            <div class="card">Today's Revenue<br><strong>$<?= number_format((float)$today['revenue'],2) ?></strong></div>
+            <div class="card">Today's Revenue<br><strong>Tsh. <?= number_format((float)$today['revenue'],2) ?></strong></div>
         </section>
 
         <section style="margin-top:16px">
             <h3>Quick actions</h3>
             <ul>
                 <li><a href="/pos/pos.php">Open POS</a></li>
-                <li><a href="products.php">Lookup products</a></li>
-                <li><a href="inventory.php">Check inventory</a></li>
+                <li><a href="products_cashier.php">Lookup products</a></li>
+                <li><a href="inventory_cashier.php">Check inventory</a></li>
             </ul>
         </section>
     </main>

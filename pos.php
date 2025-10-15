@@ -57,13 +57,12 @@ require_once __DIR__ . '/inc/db.php';
 let PRODUCTS = [];
 let CART = [];
 
-// Fetch products from backend
 async function fetchProducts() {
     try {
         const res = await fetch('api/product_api.php?action=list');
         if (!res.ok) throw new Error('Failed to fetch products');
         const data = await res.json();
-        // Ensure numeric fields
+
         return data.map(p => ({
             id: parseInt(p.id),
             name: p.name,
@@ -76,7 +75,6 @@ async function fetchProducts() {
     }
 }
 
-// Render product list
 function renderProducts() {
     const el = document.getElementById('product-list');
     el.innerHTML = '';
@@ -86,7 +84,7 @@ function renderProducts() {
         div.innerHTML = `
             <div>
                 <strong>${p.name}</strong>
-                <div>$${p.price.toFixed(2)}</div>
+                <div>Tsh. ${p.price.toFixed(2)}</div>
             </div>
             <div>
                 <input type="number" min="1" max="${p.stock}" value="1" data-id="${p.id}" class="qty" style="width:70px"/>
@@ -96,7 +94,7 @@ function renderProducts() {
         el.appendChild(div);
     });
 
-    // Add button handlers
+    
     el.querySelectorAll('button').forEach(b => {
         b.addEventListener('click', e => {
             const id = parseInt(e.target.dataset.id);
@@ -107,7 +105,7 @@ function renderProducts() {
     });
 }
 
-// Add product to cart
+
 function addToCart(id, qty) {
     const prod = PRODUCTS.find(p => p.id === id);
     if (!prod) return;
@@ -137,15 +135,15 @@ function renderCart() {
             <div>${item.name} x 
                 <input type="number" min="1" max="${PRODUCTS.find(p=>p.id===item.product_id).stock}" value="${item.qty}" data-id="${item.product_id}" class="cart-qty" style="width:60px"/>
             </div>
-            <div>$${(item.qty*item.price).toFixed(2)} 
+            <div>Tsh. ${(item.qty*item.price).toFixed(2)} 
                 <button class="remove" data-id="${item.product_id}">Remove</button>
             </div>
         `;
         el.appendChild(div);
     });
-    document.getElementById('cart-total').textContent = 'Total: $' + total.toFixed(2);
+    document.getElementById('cart-total').textContent = 'Total: Tsh. ' + total.toFixed(2);
 
-    // Quantity change
+
     el.querySelectorAll('input.cart-qty').forEach(i => {
         i.addEventListener('change', e => {
             const id = parseInt(e.target.dataset.id);
@@ -155,7 +153,7 @@ function renderCart() {
         });
     });
 
-    // Remove item
+
     el.querySelectorAll('button.remove').forEach(b => {
         b.addEventListener('click', e => {
             const id = parseInt(e.target.dataset.id);
@@ -165,7 +163,6 @@ function renderCart() {
     });
 }
 
-// Checkout
 document.getElementById('checkout').addEventListener('click', async () => {
     if (CART.length === 0) return alert('Cart empty');
 
@@ -183,7 +180,7 @@ document.getElementById('checkout').addEventListener('click', async () => {
 
         const data = await res.json();
         if (data.ok) {
-            alert('Sale recorded: ' + data.sale_id + '\nTotal: $' + data.total);
+            alert('Sale recorded: ' + data.sale_id + '\nTotal: Tsh. ' + data.total);
             CART = [];
             load();
         } else {
@@ -195,7 +192,7 @@ document.getElementById('checkout').addEventListener('click', async () => {
     }
 });
 
-// Load products and render
+
 async function load() {
     PRODUCTS = await fetchProducts();
     renderProducts();
