@@ -7,8 +7,6 @@ require_once __DIR__ . '/../../inc/db.php';
 $user = current_user();
 $status = null;
 $error = null;
-
-// Ensure notifications table exists (idempotent)
 $pdo->exec("CREATE TABLE IF NOT EXISTS `manager_notifications` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `type` VARCHAR(100) NOT NULL,
@@ -39,9 +37,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+     <link rel="stylesheet" href="../../assets/css/style.css">
     <title>Contact Manager</title>
 </head>
 <body>
+             <header>
+        <div class="menu-toggle" id="menuToggle">☰</div>
+
+        <nav id="sidebarNav">
+            <h1>Admin <br> POS Dashboard</h1>
+            <ul>
+                <li><a href="../cashier_dashboard.php" >Dashboard</a></li>
+                <li><a href="../contacts/contact_admin.php">contact admin</a> </li>
+                <li><a href="../contacts/contact_manager.php">Contact Manager</a></li>
+                <li><a href="/pos/pos.php">POS</a></li>
+                <li><a href="/pos/auth/out.php">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
     <h2>Contact Manager</h2>
     <?php if ($status): ?><div style="color:green"><?= htmlspecialchars($status) ?></div><?php endif; ?>
     <?php if ($error): ?><div style="color:red"><?= htmlspecialchars($error) ?></div><?php endif; ?>
@@ -50,6 +64,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <textarea id="message" name="message" rows="4" cols="50" placeholder="Type your message here..."><?= isset($_POST['message']) ? htmlspecialchars($_POST['message']) : '' ?></textarea><br><br>
         <button type="submit">Send</button>
     </form>
-    <p><a href="/pos/admin/dashboard.php">Back</a></p>
+    </main>
 </body>
 </html>

@@ -17,6 +17,7 @@ if ($user['role'] !== 'admin') {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Admin Reports for POS System">
     <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         .back-btn {
             display: inline-block;
@@ -130,30 +131,34 @@ if ($user['role'] !== 'admin') {
   pointer-events: all;
 }
 
+#sidebarNav ul li a i {
+  margin-right: 10px;
+  width: 20px;
+  text-align: center;
+}
 
     </style>
 </head>
 
 <body>
-    <header>
-        <div class="menu-toggle" id="menuToggle">☰</div>
+<header>
+  <div class="menu-toggle" id="menuToggle">☰</div>
 
-        <nav id="sidebarNav">
-            <h1>Admin <br> POS Dashboard</h1>
-            <ul>
-                <li><a href="dashboard.php" >Dashboard</a></li>
-                <li><a href="products.php">Products</a></li>
-                <li><a href="inventory.php">Inventory</a></li>
-                <li><a href="reports.php"class="activ">Reports</a></li>
-                <li><a href="users.php">Manage users</a></li>
-                <li><a href="analys.php">Analyse</a></li>
-                <li><a href="../admin/messages/admin_messages.php">Notifications</a></li>
-                <li><a href="/pos/pos.php">POS</a></li>
-                <li><a href="/pos/auth/out.php">Logout</a></li>
-            </ul>
-        </nav>
-    </header>
-
+  <nav id="sidebarNav">
+    <h1>Admin <br> POS Dashboard</h1>
+    <ul>
+      <li><a href="dashboard.php"><i class="fa-solid fa-house-user"></i> Dashboard</a></li>
+      <li><a href="products.php"><i class="fa-solid fa-box"></i> Products</a></li>
+      <li><a href="inventory.php"><i class="fa-solid fa-warehouse"></i> Inventory</a></li>
+      <li><a href="reports.php" class="activ"><i class="fa-solid fa-chart-line"></i> Reports</a></li>
+      <li><a href="users.php"><i class="fa-solid fa-users-gear"></i> Manage Users</a></li>
+      <li><a href="analys.php"><i class="fa-solid fa-chart-pie"></i> Analyse</a></li>
+      <li><a href="../admin/messages/admin_messages.php"><i class="fa-solid fa-bell"></i> Notifications</a></li>
+      <li><a href="/pos/pos.php"><i class="fa-solid fa-cash-register"></i> POS</a></li>
+      <li><a href="/pos/auth/out.php"><i class="fa-solid fa-right-from-bracket"></i> Logout</a></li>
+    </ul>
+  </nav>
+</header>
     <main>
         <h1>Sales Reports</h1>
         <a href="dashboard.php" class="back-btn">← Back</a>
@@ -171,20 +176,17 @@ try {
     $page = max($page, 1);
     $offset = ($page - 1) * $limit;
 
-    // ✅ Count total sales
     $total_records = (int)$pdo->query('SELECT COUNT(*) FROM sales')->fetchColumn();
     $total_pages = max(1, ceil($total_records / $limit));
 
-    // ✅ Try to use total from sales table if exists, else compute from sale_items
     $columns = $pdo->query("SHOW COLUMNS FROM sales")->fetchAll(PDO::FETCH_COLUMN);
     $has_total = in_array('total', $columns);
 
     if ($has_total) {
-        // If sales table has a total column
+
         $total = $pdo->query('SELECT IFNULL(SUM(total),0) FROM sales')->fetchColumn();
         $stmt = $pdo->prepare('SELECT id, created_at, total FROM sales ORDER BY created_at DESC LIMIT :limit OFFSET :offset');
     } else {
-        // If not, calculate total from sale_items
         $total = $pdo->query('SELECT IFNULL(SUM(qty*price),0) FROM sale_items')->fetchColumn();
         $stmt = $pdo->prepare('
             SELECT s.id, s.created_at, IFNULL(SUM(si.qty*si.price),0) AS total
@@ -216,7 +218,6 @@ try {
         echo '<p>No sales found.</p>';
     }
 
-    // ✅ Pagination links
     if ($total_pages > 1) {
         echo '<div class="pagination">';
         if ($page > 1) echo '<a href="?page=' . ($page - 1) . '">« Prev</a>';

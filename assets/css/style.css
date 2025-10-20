@@ -1,10 +1,10 @@
 :root {
     --primary-color: #2d3748b1;
     --secondary-color: #4a5568;
-    --accent-color: #ca2ba0;
+    --accent-color: #2c3e50;
 
     --background-color: #f4f6f8;
-    --text-color: #482d2d;
+    --text-color: #1a1111;
     --border-radius: 6px;
     --padding: 12px;
     --margin: 8px;
@@ -26,7 +26,6 @@ body {
 }
 
 header nav {
-    /* background-color: var(--primary-color); */
     padding: var(--padding);
     width: auto;
     height: 97.5vh;
@@ -65,43 +64,6 @@ main {
     flex: 1;
     margin: var(--margin);
     padding: var(--padding);
-}
-
-main .cards {
-    margin: 2rem;
-    display: flex;
-    gap: var(--margin);
-    flex-wrap: wrap;
-}
-
-main .cards .card {
-    background-color: white;
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
-    padding: var(--padding);
-    flex: 1 1 calc(33.333% - var(--margin) * 2);
-    text-align: center;
-}
-
-main .cards .card strong {
-    font-size: 2rem;
-    display: block;
-    margin-top: var(--margin);
-}
-
-main .cards .card1 {
-    background-color: #482d2d;
-    color: white;
-}
-
-main .cards .card2 {
-    background-color: #2d4841;
-    color: white;
-}
-
-main .cards .card3 {
-    background-color: #2d3a48;
-    color: white;
 }
 
 main .welcome {
@@ -595,7 +557,7 @@ table th {
   gap: 1rem;
 }
 
-/* Notification card */
+
 .notification-card {
   background: #fff;
   border-radius: 12px;

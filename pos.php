@@ -56,6 +56,8 @@ header {
   backdrop-filter: var(--blur-light);
   box-shadow: 0 4px 15px var(--shadow);
   padding: 20px;
+  display: flex;
+  justify-content: space-around;
   text-align: center;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -182,8 +184,8 @@ h2 {
   position: relative;
   z-index: 2;
   flex: 1;
-  overflow-y: auto; /* enable vertical scroll */
-  max-height: 500px; /* adjust as needed */
+  overflow-y: auto;
+  max-height: 500px; 
   padding-right: 8px;
   margin-bottom: 15px;
 }
@@ -212,7 +214,7 @@ h2 {
   margin-bottom: 15px;
 }
 
-#checkout {
+#checkout, #rists, #login {
   position: relative;
   z-index: 2;
   background: linear-gradient(135deg, var(--accent), var(--accent-alt));
@@ -225,8 +227,10 @@ h2 {
   transition: all 0.3s ease;
   box-shadow: 0 5px 15px rgba(0, 212, 255, 0.3);
 }
-
-#checkout:hover {
+a{
+  text-decoration: none;
+}
+#checkout:hover, #rists:hover , #login{
   background: linear-gradient(135deg, var(--accent-alt), var(--accent));
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(0, 212, 255, 0.45);
@@ -248,7 +252,7 @@ h2 {
   border-radius: 6px;
 }
 
-/* ===== Responsive ===== */
+
 @media (max-width: 900px) {
   .layout {
     grid-template-columns: 1fr;
@@ -279,30 +283,117 @@ h2 {
   display: flex;
   justify-content: center;
   gap: 6px;
-  margin-top: 10px;
+  margin-top: 15px;
 }
 
 #pagination button {
-  padding: 6px 12px;
+  padding: 15px 20px;
   border: none;
   background: #eee;
   border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.5s ease;
   font-weight: 500;
 }
 
 #pagination button:hover {
-  background: #4CAF50;
+  background: var(--bg-main);
   color: white;
 }
 
 #pagination .active {
-  background: #4CAF50;
+  background: #1e201eff;
   color: white;
   font-weight: bold;
 }
 
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  #print-area, #print-area * {
+    visibility: visible !important;
+  }
+
+  #print-area {
+    position: fixed !important;
+    top: 0 !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 80mm !important; 
+    max-height: 200mm !important; 
+    margin: 0 !important;
+    padding: 8px !important;
+    background: #fff !important;
+    color: #000 !important;
+    font-family: "Courier New", monospace !important;
+    font-size: 12px !important;
+    text-align: center !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+  html, body {
+    width: 80mm !important;
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    background: none !important;
+  }
+
+  @page {
+    size: 80mm auto; 
+    margin: 0;  
+  }
+
+  #print-area h2 {
+    font-size: 15px;
+    font-weight: bold;
+    margin-bottom: 5px;
+    border-bottom: 1px dashed #000;
+    padding-bottom: 3px;
+  }
+
+  #print-area table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 5px;
+  }
+
+  #print-area th, #print-area td {
+    padding: 3px 0;
+    font-size: 12px;
+  }
+
+  #print-area th {
+    border-bottom: 1px dashed #000;
+    font-weight: bold;
+  }
+
+  #print-area td:nth-child(1) {
+    text-align: left;
+  }
+
+  #print-area td:nth-child(2),
+  #print-area td:nth-child(3),
+  #print-area td:nth-child(4) {
+    text-align: right;
+  }
+
+  #print-area tfoot td {
+    border-top: 1px dashed #000;
+    font-weight: bold;
+    padding-top: 4px;
+  }
+
+  #print-area .footer {
+    margin-top: 10px;
+    border-top: 1px dashed #000;
+    padding-top: 5px;
+    font-size: 11px;
+  }
+}
 
   </style>
 </head>
@@ -310,6 +401,7 @@ h2 {
 <body>
   <header class="header">
     <h1>POS System</h1>
+    <a href="auth/login.php" id="login">Login</a>
   </header>
 <div class="layout">
   <div class="products">
@@ -324,225 +416,73 @@ h2 {
     <div id="cart-items">(empty)</div>
     <div id="cart-total"></div>
     <button id="checkout">Checkout</button>
+    <button id="rists">Print Receipt</button>
   </div>
 </div>
+<div id="print-area" style="display:none;"></div>
 
-  <script>
-let PRODUCTS = [];
-let CART = [];
-let filteredProducts = [];
-let currentPage = 1;
-const perPage = 6;
-
-// Fetch products from backend
-async function fetchProducts() {
-  try {
-    const res = await fetch('api/product_api.php?action=list');
-    if (!res.ok) throw new Error('Failed to fetch products');
-    const data = await res.json();
-    return data.map(p => ({
-      id: parseInt(p.id),
-      name: p.name,
-      price: parseFloat(p.price),
-      stock: parseInt(p.stock)
-    }));
-  } catch (err) {
-    console.error(err);
-    return [];
-  }
-}
-
-// Render product grid with pagination
-function renderProducts() {
-  const el = document.getElementById('product-list');
-  el.innerHTML = '';
-
-  const start = (currentPage - 1) * perPage;
-  const end = start + perPage;
-  const paginated = filteredProducts.slice(start, end);
-
-  if (paginated.length === 0) {
-    el.innerHTML = '<p style="text-align:center;opacity:0.6;">No products found.</p>';
-    document.getElementById('pagination').innerHTML = '';
+<script src="assets/js/script.js"></script>
+<script>
+  document.getElementById('rists').addEventListener('click', () => {
+  if (CART.length === 0) {
+    alert("No items in cart to print.");
     return;
   }
 
-  paginated.forEach(p => {
-    const div = document.createElement('div');
-    div.className = 'product';
-    div.innerHTML = `
-      <div class="p-info">
-        <strong>${p.name}</strong>
-        <div>Tsh. ${p.price.toFixed(2)}</div>
-      </div>
-      <div class="p-action">
-        <input type="number" min="1" max="${p.stock}" value="1" data-id="${p.id}" class="qty"/>
-        <button data-id="${p.id}" class="add-btn">Add</button>
-      </div>
-    `;
-    el.appendChild(div);
-  });
+  const printArea = document.getElementById('print-area');
+  const now = new Date();
+  const formattedDate = now.toLocaleString();
 
-  // Add button events
-  el.querySelectorAll('.add-btn').forEach(b => {
-    b.addEventListener('click', e => {
-      const id = parseInt(e.target.dataset.id);
-      const qtyInput = el.querySelector(`input.qty[data-id="${id}"]`);
-      const qty = Math.min(parseInt(qtyInput.value) || 1, PRODUCTS.find(p => p.id === id).stock);
-      addToCart(id, qty);
-    });
-  });
+  let html = `
+    <h2> Receipt</h2>
+    <div style="text-align:center;font-size:13px;">Date: ${formattedDate}</div>
+    <table>
+      <thead>
+        <tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr>
+      </thead>
+      <tbody>
+  `;
 
-  renderPagination();
-}
-
-// Pagination buttons
-function renderPagination() {
-  const totalPages = Math.ceil(filteredProducts.length / perPage);
-  const pagination = document.getElementById('pagination');
-  pagination.innerHTML = '';
-
-  if (totalPages <= 1) return;
-
-  // Prev button
-  if (currentPage > 1) {
-    const prev = document.createElement('button');
-    prev.textContent = 'Prev';
-    prev.className = 'page-btn';
-    prev.addEventListener('click', () => {
-      currentPage--;
-      renderProducts();
-    });
-    pagination.appendChild(prev);
-  }
-
-  // Page numbers
-  for (let i = 1; i <= totalPages; i++) {
-    const btn = document.createElement('button');
-    btn.textContent = i;
-    btn.className = (i === currentPage) ? 'active' : 'page-btn';
-    btn.addEventListener('click', () => {
-      currentPage = i;
-      renderProducts();
-    });
-    pagination.appendChild(btn);
-  }
-
-  // Next button
-  if (currentPage < totalPages) {
-    const next = document.createElement('button');
-    next.textContent = 'Next';
-    next.className = 'page-btn';
-    next.addEventListener('click', () => {
-      currentPage++;
-      renderProducts();
-    });
-    pagination.appendChild(next);
-  }
-}
-
-// Cart management
-function addToCart(id, qty) {
-  const prod = PRODUCTS.find(p => p.id === id);
-  if (!prod) return;
-  const existing = CART.find(c => c.product_id === id);
-  if (existing) {
-    existing.qty = Math.min(existing.qty + qty, prod.stock);
-  } else {
-    CART.push({
-      product_id: id,
-      name: prod.name,
-      price: prod.price,
-      qty: qty
-    });
-  }
-  renderCart();
-}
-
-function renderCart() {
-  const el = document.getElementById('cart-items');
-  el.innerHTML = '';
   let total = 0;
   CART.forEach(item => {
-    total += item.qty * item.price;
-    const div = document.createElement('div');
-    div.innerHTML = `
-      <div>${item.name} x 
-          <input type="number" min="1" max="${PRODUCTS.find(p=>p.id===item.product_id).stock}" value="${item.qty}" data-id="${item.product_id}" class="cart-qty"/>
-      </div>
-      <div>Tsh. ${(item.qty*item.price).toFixed(2)} 
-          <button class="remove" data-id="${item.product_id}">✕</button>
-      </div>
+    const itemTotal = item.qty * item.price;
+    total += itemTotal;
+    html += `
+      <tr>
+        <td>${item.name}</td>
+        <td>${item.qty}</td>
+        <td>${item.price.toFixed(2)}</td>
+        <td>${itemTotal.toFixed(2)}</td>
+      </tr>
     `;
-    el.appendChild(div);
-  });
-  document.getElementById('cart-total').textContent = 'Total: Tsh. ' + total.toFixed(2);
-
-  el.querySelectorAll('input.cart-qty').forEach(i => {
-    i.addEventListener('change', e => {
-      const id = parseInt(e.target.dataset.id);
-      const val = Math.min(Math.max(parseInt(e.target.value) || 1, 1), PRODUCTS.find(p => p.id === id).stock);
-      CART.find(c => c.product_id === id).qty = val;
-      renderCart();
-    });
   });
 
-  el.querySelectorAll('button.remove').forEach(b => {
-    b.addEventListener('click', e => {
-      const id = parseInt(e.target.dataset.id);
-      CART = CART.filter(c => c.product_id !== id);
-      renderCart();
-    });
-  });
-}
+  html += `
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="3">TOTAL</td>
+          <td>${total.toFixed(2)}</td>
+        </tr>
+      </tfoot>
+    </table>
+    <div class="footer">Thank you for shopping! <br>Powered by Elly</div>
+  `;
 
-// Checkout
-document.getElementById('checkout').addEventListener('click', async () => {
-  if (CART.length === 0) return alert('Cart is empty');
+  printArea.innerHTML = html;
+  printArea.style.display = "block";
 
-  const items = CART.map(i => ({
-    product_id: parseInt(i.product_id),
-    qty: parseInt(i.qty)
-  }));
+window.scrollTo(0, 0);
+document.body.style.overflow = "hidden";
+window.print();
+document.body.style.overflow = "auto";
 
-  try {
-    const res = await fetch('api/cart_api.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items })
-    });
 
-    const data = await res.json();
-    if (data.ok) {
-      alert('Sale recorded: #' + data.sale_id + '\nTotal: Tsh. ' + data.total);
-      CART = [];
-      load();
-    } else {
-      alert('Error: ' + (data.error || 'Unknown'));
-    }
-  } catch (err) {
-    console.error('Checkout error:', err);
-    alert('Failed to complete checkout.');
-  }
+  setTimeout(() => {
+    printArea.style.display = "none";
+  }, 1000);
 });
 
-// Live search
-document.getElementById('search').addEventListener('input', e => {
-  const q = e.target.value.toLowerCase().trim();
-  filteredProducts = PRODUCTS.filter(p => p.name.toLowerCase().includes(q));
-  currentPage = 1;
-  renderProducts();
-});
-
-// Initial load
-async function load() {
-  PRODUCTS = await fetchProducts();
-  filteredProducts = [...PRODUCTS];
-  renderProducts();
-  renderCart();
-}
-load();
-
-  </script>
+</script>
 </body>
 </html>
